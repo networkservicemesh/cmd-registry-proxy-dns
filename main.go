@@ -94,7 +94,7 @@ func main() {
 	nseChain := chain.NewNetworkServiceEndpointRegistryServer(
 		dnsresolve.NewNetworkServiceEndpointRegistryServer(),
 		swap.NewNetworkServiceEndpointRegistryServer(config.Domain, &config.ProxyNSMgrURL, &config.PublicNSMgrURL),
-		connect.NewNetworkServiceEndpointRegistryServer(func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceEndpointRegistryClient {
+		connect.NewNetworkServiceEndpointRegistryServer(ctx, func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceEndpointRegistryClient {
 			return chain.NewNetworkServiceEndpointRegistryClient(api_registry.NewNetworkServiceEndpointRegistryClient(cc))
 		}),
 	)
@@ -102,7 +102,7 @@ func main() {
 	nsChain := chain.NewNetworkServiceRegistryServer(
 		dnsresolve.NewNetworkServiceRegistryServer(),
 		swap.NewNetworkServiceRegistryServer(config.Domain),
-		connect.NewNetworkServiceRegistryServer(func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceRegistryClient {
+		connect.NewNetworkServiceRegistryServer(ctx, func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceRegistryClient {
 			return chain.NewNetworkServiceRegistryClient(api_registry.NewNetworkServiceRegistryClient(cc))
 		}),
 	)
