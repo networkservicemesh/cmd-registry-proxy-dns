@@ -47,10 +47,10 @@ import (
 
 // Config is configuration for cmd-registry-proxy-dns
 type Config struct {
-	ListenOn       url.URL `default:"unix:///listen.on.socket" desc:"url to listen on" split_words:"true"`
-	ProxyNSMgrURL  url.URL `desc:"url to proxy nsmgr"`
-	PublicNSMgrURL url.URL `desc:"url to nsmgr"`
-	Domain         string  `desc:"domain name"`
+	ListenOn       []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
+	ProxyNSMgrURL  url.URL   `desc:"url to proxy nsmgr"`
+	PublicNSMgrURL url.URL   `desc:"url to nsmgr"`
+	Domain         string    `desc:"domain name"`
 }
 
 func main() {
@@ -113,8 +113,11 @@ func main() {
 
 	registry.NewServer(nsChain, nseChain).Register(server)
 
-	srvErrCh := grpcutils.ListenAndServe(ctx, &config.ListenOn, server)
-	exitOnErr(ctx, cancel, srvErrCh)
+	for i := 0; i < len(config.ListenOn); i++ {
+		srvErrCh := grpcutils.ListenAndServe(ctx, &config.ListenOn[i], server)
+		exitOnErr(ctx, cancel, srvErrCh)
+	}
+
 	log.Entry(ctx).Infof("Startup completed in %v", time.Since(startTime))
 	<-ctx.Done()
 }
