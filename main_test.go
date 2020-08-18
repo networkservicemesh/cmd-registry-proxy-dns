@@ -94,7 +94,7 @@ func (t *RegistryTestSuite) SetupSuite() {
 	require.Len(t.T(), t.sutErrCh, 0)
 
 	// Get config from env
-	require.NoError(t.T(), envconfig.Process("nsm", &t.config))
+	require.NoError(t.T(), envconfig.Process("registry-proxy-dns\"", &t.config))
 }
 
 func (t *RegistryTestSuite) TearDownSuite() {
@@ -117,7 +117,7 @@ func (t *RegistryTestSuite) TestHealthCheck() {
 	ctx, cancel := context.WithTimeout(t.ctx, 100*time.Second)
 	defer cancel()
 	healthCC, err := grpc.DialContext(ctx,
-		t.config.ListenOn.String(),
+		t.config.ListenOn[0].String(),
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsconfig.MTLSClientConfig(t.x509source, t.x509bundle, tlsconfig.AuthorizeAny()))),
 	)
 	if err != nil {
