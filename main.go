@@ -97,7 +97,10 @@ func main() {
 		swap.NewNetworkServiceEndpointRegistryServer(config.Domain, &config.ProxyNSMgrURL, &config.PublicNSMgrURL),
 		connect.NewNetworkServiceEndpointRegistryServer(ctx, func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceEndpointRegistryClient {
 			return chain.NewNetworkServiceEndpointRegistryClient(api_registry.NewNetworkServiceEndpointRegistryClient(cc))
-		}),
+		}, connect.WithClientDialOptions(
+			grpc.WithBlock(),
+			grpc.WithTransportCredentials(credentials.NewTLS(tlsconfig.MTLSClientConfig(source, source, tlsconfig.AuthorizeAny()))),
+		)),
 	)
 
 	nsChain := chain.NewNetworkServiceRegistryServer(
@@ -105,7 +108,10 @@ func main() {
 		swap.NewNetworkServiceRegistryServer(config.Domain),
 		connect.NewNetworkServiceRegistryServer(ctx, func(ctx context.Context, cc grpc.ClientConnInterface) api_registry.NetworkServiceRegistryClient {
 			return chain.NewNetworkServiceRegistryClient(api_registry.NewNetworkServiceRegistryClient(cc))
-		}),
+		}, connect.WithClientDialOptions(
+			grpc.WithBlock(),
+			grpc.WithTransportCredentials(credentials.NewTLS(tlsconfig.MTLSClientConfig(source, source, tlsconfig.AuthorizeAny()))),
+		)),
 	)
 
 	// Create GRPC Server and register services
