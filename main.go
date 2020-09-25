@@ -90,7 +90,7 @@ func main() {
 	// Create GRPC Server and register services
 	server := grpc.NewServer(grpc.Creds(tlsCreds))
 
-	proxydns.NewServer(ctx, net.DefaultResolver, config.Domain, &config.ProxyNSMgrURL, grpc.WithBlock(), grpc.WithTransportCredentials(tlsCreds))
+	proxydns.NewServer(ctx, net.DefaultResolver, config.Domain, &config.ProxyNSMgrURL, grpc.WithBlock(), grpc.WithTransportCredentials(tlsCreds)).Register(server)
 
 	for i := 0; i < len(config.ListenOn); i++ {
 		srvErrCh := grpcutils.ListenAndServe(ctx, &config.ListenOn[i], server)
