@@ -7,7 +7,7 @@ require (
 	github.com/edwarnicke/exechelper v1.0.2
 	github.com/edwarnicke/serialize v1.0.2-0.20201017171944-cf1114ca2f6f // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/networkservicemesh/sdk v0.0.0-20201021120626-347c5f122b8a
+	github.com/networkservicemesh/sdk v0.0.0-20201021144352-abb45b1f2a5f
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spiffe/go-spiffe/v2 v2.0.0-alpha.4.0.20200528145730-dc11d0c74e85
 	github.com/stretchr/testify v1.6.1
