@@ -23,6 +23,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/networkservicemesh/sdk/pkg/tools/jaeger"
+	"github.com/networkservicemesh/sdk/pkg/tools/spanhelper"
+
 	"github.com/networkservicemesh/sdk/pkg/registry/chains/proxydns"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
@@ -62,6 +65,10 @@ func main() {
 		log.Entry(ctx).Infof("%s", err)
 	}
 
+	// Configure open tracing
+	jaegerCloser := jaeger.InitJaeger("cmd-registry-proxy-dns")
+	defer func() { _ = jaegerCloser.Close() }()
+
 	startTime := time.Now()
 
 	// Get config from environment
@@ -88,9 +95,11 @@ func main() {
 
 	tlsCreds := credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny()))
 	// Create GRPC Server and register services
-	server := grpc.NewServer(grpc.Creds(tlsCreds))
+	options := append(spanhelper.WithTracing(), grpc.Creds(tlsCreds))
+	server := grpc.NewServer(options...)
 
-	proxydns.NewServer(ctx, net.DefaultResolver, config.Domain, &config.ProxyNSMgrURL, grpc.WithBlock(), grpc.WithTransportCredentials(tlsCreds)).Register(server)
+	clientOptions := append(spanhelper.WithTracingDial(), grpc.WithBlock(), grpc.WithTransportCredentials(tlsCreds))
+	proxydns.NewServer(ctx, net.DefaultResolver, config.Domain, &config.ProxyNSMgrURL, clientOptions...).Register(server)
 
 	for i := 0; i < len(config.ListenOn); i++ {
 		srvErrCh := grpcutils.ListenAndServe(ctx, &config.ListenOn[i], server)
