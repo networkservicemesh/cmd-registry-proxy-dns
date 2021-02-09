@@ -41,7 +41,7 @@ import (
 
 	main "github.com/networkservicemesh/cmd-registry-proxy-dns"
 
-	"github.com/networkservicemesh/sdk/pkg/tools/logger"
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/spire"
 )
 
@@ -58,7 +58,7 @@ type RegistryTestSuite struct {
 
 func (t *RegistryTestSuite) SetupSuite() {
 	logrus.SetFormatter(&nested.Formatter{})
-	logger.EnableTracing(true)
+	log.EnableTracing(true)
 	t.ctx, t.cancel = context.WithCancel(context.Background())
 
 	// Run spire
