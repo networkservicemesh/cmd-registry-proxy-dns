@@ -29,7 +29,9 @@ import (
 	_ "net"
 	_ "net/url"
 	_ "os"
+	_ "os/signal"
 	_ "path/filepath"
+	_ "syscall"
 	_ "testing"
 	_ "time"
 )
