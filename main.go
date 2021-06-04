@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !windows
+
 package main
 
 import (
@@ -24,6 +26,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/edwarnicke/grpcfd"
 
 	"github.com/networkservicemesh/sdk/pkg/tools/jaeger"
 	"github.com/networkservicemesh/sdk/pkg/tools/opentracing"
@@ -46,10 +50,7 @@ import (
 
 // Config is configuration for cmd-registry-proxy-dns
 type Config struct {
-	ListenOn       []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
-	ProxyNSMgrURL  url.URL   `desc:"url to proxy nsmgr"`
-	PublicNSMgrURL url.URL   `desc:"url to nsmgr"`
-	Domain         string    `desc:"domain name"`
+	ListenOn []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
 }
 
 func main() {
@@ -83,10 +84,10 @@ func main() {
 
 	// Get config from environment
 	config := &Config{}
-	if err := envconfig.Usage("registry-proxy-dns", config); err != nil {
+	if err := envconfig.Usage("nsm", config); err != nil {
 		logrus.Fatal(err)
 	}
-	if err := envconfig.Process("registry-proxy-dns", config); err != nil {
+	if err := envconfig.Process("nsm", config); err != nil {
 		logrus.Fatalf("error processing config from env: %+v", err)
 	}
 
@@ -105,11 +106,22 @@ func main() {
 
 	tlsCreds := credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny()))
 	// Create GRPC Server and register services
-	options := append(opentracing.WithTracing(), grpc.Creds(tlsCreds))
-	server := grpc.NewServer(options...)
+	server := grpc.NewServer(append(opentracing.WithTracing(), grpc.Creds(tlsCreds))...)
 
-	clientOptions := append(opentracing.WithTracingDial(), grpc.WithBlock(), grpc.WithTransportCredentials(tlsCreds))
-	proxydns.NewServer(ctx, net.DefaultResolver, config.Domain, &config.ProxyNSMgrURL, clientOptions...).Register(server)
+	clientOptions := append(
+		opentracing.WithTracingDial(),
+		grpc.WithBlock(),
+		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
+		grpc.WithTransportCredentials(
+			grpcfd.TransportCredentials(
+				credentials.NewTLS(
+					tlsconfig.MTLSClientConfig(source, source, tlsconfig.AuthorizeAny()),
+				),
+			),
+		),
+	)
+	s1 := proxydns.NewServer(ctx, net.DefaultResolver, clientOptions...)
+	s1.Register(server)
 
 	for i := 0; i < len(config.ListenOn); i++ {
 		srvErrCh := grpcutils.ListenAndServe(ctx, &config.ListenOn[i], server)
