@@ -51,10 +51,6 @@ type Config struct {
 }
 
 func main() {
-
-	os.Setenv("GRPC_GO_LOG_SEVERITY_LEVEL", "info")
-	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "2")
-
 	// Setup context to catch signals
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
