@@ -6,6 +6,7 @@ import (
 	_ "fmt"
 	_ "github.com/antonfisher/nested-logrus-formatter"
 	_ "github.com/edwarnicke/exechelper"
+	_ "github.com/edwarnicke/grpcfd"
 	_ "github.com/kelseyhightower/envconfig"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/chains/proxydns"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/debug"
