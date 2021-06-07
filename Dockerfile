@@ -23,4 +23,4 @@ CMD dlv -l :40000 --headless=true --api-version=2 test -test.v ./...
 
 FROM alpine as runtime
 COPY --from=build /bin/registry-proxy-dns /bin/registry-proxy-dns
-CMD /bin/registry-proxy-dns
+ENTRYPOINT ["/bin/registry-proxy-dns"]
