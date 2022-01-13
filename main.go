@@ -51,9 +51,9 @@ import (
 
 // Config is configuration for cmd-registry-proxy-dns
 type Config struct {
-	ListenOn                  []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
-	LogLevel                  string    `default:"INFO" desc:"Log level" split_words:"true"`
-	OpenTelemetryCollectorURL string    `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector URL"`
+	ListenOn              []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
+	LogLevel              string    `default:"INFO" desc:"Log level" split_words:"true"`
+	OpenTelemetryEndpoint string    `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
 }
 
 func main() {
@@ -99,13 +99,13 @@ func main() {
 
 	// Configure Open Telemetry
 	if opentelemetry.IsEnabled() {
-		collectorAddress := config.OpenTelemetryCollectorURL
+		collectorAddress := config.OpenTelemetryEndpoint
 		spanExporter := opentelemetry.InitSpanExporter(ctx, collectorAddress)
 		metricExporter := opentelemetry.InitMetricExporter(ctx, collectorAddress)
 		o := opentelemetry.Init(ctx, spanExporter, metricExporter, "registry-proxy-dns")
 		defer func() {
 			if err = o.Close(); err != nil {
-				log.FromContext(ctx).Fatal(err)
+				log.FromContext(ctx).Error(err.Error())
 			}
 		}()
 	}
