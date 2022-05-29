@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/url"
 	"os"
@@ -120,7 +121,12 @@ func main() {
 	}
 	logrus.Infof("SVID: %q", svid.ID)
 
-	tlsCreds := credentials.NewTLS(tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny()))
+	tlsClientConfig := tlsconfig.MTLSClientConfig(source, source, tlsconfig.AuthorizeAny())
+	tlsClientConfig.MinVersion = tls.VersionTLS12
+	tlsServerConfig := tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny())
+	tlsServerConfig.MinVersion = tls.VersionTLS12
+
+	tlsCreds := credentials.NewTLS(tlsServerConfig)
 	// Create GRPC Server and register services
 	server := grpc.NewServer(append(tracing.WithTracing(), grpc.Creds(tlsCreds))...)
 
@@ -131,7 +137,7 @@ func main() {
 		grpc.WithTransportCredentials(
 			grpcfd.TransportCredentials(
 				credentials.NewTLS(
-					tlsconfig.MTLSClientConfig(source, source, tlsconfig.AuthorizeAny()),
+					tlsClientConfig,
 				),
 			),
 		),
