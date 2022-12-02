@@ -152,7 +152,7 @@ func main() {
 		proxydns.WithAuthorizeNSERegistryClient(authorize.NewNetworkServiceEndpointRegistryClient()),
 		proxydns.WithAuthorizeNSRegistryClient(authorize.NewNetworkServiceRegistryClient()),
 		proxydns.WithAuthorizeNSRegistryServer(authorize.NewNetworkServiceRegistryServer()),
-		proxydns.WithDialOptions(clientOptions))
+		proxydns.WithDialOptions(clientOptions...))
 	s1.Register(server)
 
 	for i := 0; i < len(config.ListenOn); i++ {
