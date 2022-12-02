@@ -141,8 +141,7 @@ func main() {
 		grpc.WithDefaultCallOptions(
 			grpc.WaitForReady(true),
 			grpc.PerRPCCredentials(token.NewPerRPCCredentials(spiffejwt.TokenGeneratorFunc(source, config.MaxTokenLifetime)))),
-		grpc.WithTransportCredentials(
-			grpcfd.TransportCredentials(credentials.NewTLS(tlsClientConfig))),
+		grpc.WithTransportCredentials(grpcfd.TransportCredentials(credentials.NewTLS(tlsClientConfig))),
 	)
 
 	s1 := proxydns.NewServer(ctx,
