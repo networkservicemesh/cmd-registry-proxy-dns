@@ -31,9 +31,12 @@ import (
 	"github.com/edwarnicke/grpcfd"
 
 	"github.com/networkservicemesh/sdk/pkg/tools/opentelemetry"
+	"github.com/networkservicemesh/sdk/pkg/tools/spiffejwt"
+	"github.com/networkservicemesh/sdk/pkg/tools/token"
 	"github.com/networkservicemesh/sdk/pkg/tools/tracing"
 
 	"github.com/networkservicemesh/sdk/pkg/registry/chains/proxydns"
+	"github.com/networkservicemesh/sdk/pkg/registry/common/authorize"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/kelseyhightower/envconfig"
@@ -51,9 +54,10 @@ import (
 
 // Config is configuration for cmd-registry-proxy-dns
 type Config struct {
-	ListenOn              []url.URL `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
-	LogLevel              string    `default:"INFO" desc:"Log level" split_words:"true"`
-	OpenTelemetryEndpoint string    `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
+	ListenOn              []url.URL     `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
+	MaxTokenLifetime      time.Duration `default:"10m" desc:"maximum lifetime of tokens" split_words:"true"`
+	LogLevel              string        `default:"INFO" desc:"Log level" split_words:"true"`
+	OpenTelemetryEndpoint string        `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
 }
 
 func main() {
@@ -131,17 +135,23 @@ func main() {
 
 	clientOptions := append(
 		tracing.WithTracingDial(),
+		grpcfd.WithChainStreamInterceptor(),
+		grpcfd.WithChainUnaryInterceptor(),
 		grpc.WithBlock(),
-		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
-		grpc.WithTransportCredentials(
-			grpcfd.TransportCredentials(
-				credentials.NewTLS(
-					tlsClientConfig,
-				),
-			),
-		),
+		grpc.WithDefaultCallOptions(
+			grpc.WaitForReady(true),
+			grpc.PerRPCCredentials(token.NewPerRPCCredentials(spiffejwt.TokenGeneratorFunc(source, config.MaxTokenLifetime)))),
+		grpc.WithTransportCredentials(grpcfd.TransportCredentials(credentials.NewTLS(tlsClientConfig))),
 	)
-	s1 := proxydns.NewServer(ctx, net.DefaultResolver, clientOptions...)
+
+	s1 := proxydns.NewServer(ctx,
+		spiffejwt.TokenGeneratorFunc(source, config.MaxTokenLifetime),
+		net.DefaultResolver,
+		proxydns.WithAuthorizeNSERegistryServer(authorize.NewNetworkServiceEndpointRegistryServer()),
+		proxydns.WithAuthorizeNSERegistryClient(authorize.NewNetworkServiceEndpointRegistryClient()),
+		proxydns.WithAuthorizeNSRegistryClient(authorize.NewNetworkServiceRegistryClient()),
+		proxydns.WithAuthorizeNSRegistryServer(authorize.NewNetworkServiceRegistryServer()),
+		proxydns.WithDialOptions(clientOptions...))
 	s1.Register(server)
 
 	for i := 0; i < len(config.ListenOn); i++ {
