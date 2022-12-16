@@ -54,10 +54,12 @@ import (
 
 // Config is configuration for cmd-registry-proxy-dns
 type Config struct {
-	ListenOn              []url.URL     `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
-	MaxTokenLifetime      time.Duration `default:"10m" desc:"maximum lifetime of tokens" split_words:"true"`
-	LogLevel              string        `default:"INFO" desc:"Log level" split_words:"true"`
-	OpenTelemetryEndpoint string        `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
+	ListenOn               []url.URL     `default:"unix:///listen.on.socket" desc:"url to listen on." split_words:"true"`
+	MaxTokenLifetime       time.Duration `default:"10m" desc:"maximum lifetime of tokens" split_words:"true"`
+	RegistryServerPolicies []string      `default:"etc/nsm/opa/common/.*.rego,etc/nsm/opa/registry/.*.rego,etc/nsm/opa/server/.*.rego" desc:"paths to files and directories that contain registry server policies" split_words:"true"`
+	RegistryClientPolicies []string      `default:"etc/nsm/opa/common/.*.rego,etc/nsm/opa/registry/.*.rego,etc/nsm/opa/client/.*.rego" desc:"paths to files and directories that contain registry client policies" split_words:"true"`
+	LogLevel               string        `default:"INFO" desc:"Log level" split_words:"true"`
+	OpenTelemetryEndpoint  string        `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
 }
 
 func main() {
@@ -147,10 +149,14 @@ func main() {
 	s1 := proxydns.NewServer(ctx,
 		spiffejwt.TokenGeneratorFunc(source, config.MaxTokenLifetime),
 		net.DefaultResolver,
-		proxydns.WithAuthorizeNSERegistryServer(authorize.NewNetworkServiceEndpointRegistryServer()),
-		proxydns.WithAuthorizeNSERegistryClient(authorize.NewNetworkServiceEndpointRegistryClient()),
-		proxydns.WithAuthorizeNSRegistryClient(authorize.NewNetworkServiceRegistryClient()),
-		proxydns.WithAuthorizeNSRegistryServer(authorize.NewNetworkServiceRegistryServer()),
+		proxydns.WithAuthorizeNSERegistryServer(authorize.NewNetworkServiceEndpointRegistryServer(
+			authorize.WithPolicies(config.RegistryServerPolicies...))),
+		proxydns.WithAuthorizeNSERegistryClient(authorize.NewNetworkServiceEndpointRegistryClient(
+			authorize.WithPolicies(config.RegistryClientPolicies...))),
+		proxydns.WithAuthorizeNSRegistryServer(authorize.NewNetworkServiceRegistryServer(
+			authorize.WithPolicies(config.RegistryServerPolicies...))),
+		proxydns.WithAuthorizeNSRegistryClient(authorize.NewNetworkServiceRegistryClient(
+			authorize.WithPolicies(config.RegistryClientPolicies...))),
 		proxydns.WithDialOptions(clientOptions...))
 	s1.Register(server)
 
