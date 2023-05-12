@@ -141,7 +141,6 @@ func main() {
 		grpcfd.WithChainUnaryInterceptor(),
 		grpc.WithBlock(),
 		grpc.WithDefaultCallOptions(
-			grpc.WaitForReady(true),
 			grpc.PerRPCCredentials(token.NewPerRPCCredentials(spiffejwt.TokenGeneratorFunc(source, config.MaxTokenLifetime)))),
 		grpc.WithTransportCredentials(grpcfd.TransportCredentials(credentials.NewTLS(tlsClientConfig))),
 	)
