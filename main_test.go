@@ -1,5 +1,7 @@
 // Copyright (c) 2020-2022 Doc.ai and/or its affiliates.
 //
+// Copyright (c) 2023 Cisco and/or its affiliates.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,7 +70,7 @@ func (t *RegistryTestSuite) SetupSuite() {
 	require.NoError(t.T(), err)
 	t.spireErrCh = spire.Start(
 		spire.WithContext(t.ctx),
-		spire.WithEntry("spiffe://example.org/registry-proxy-dns", "unix:path:/bin/registry-proxy-dns"),
+		spire.WithEntry("spiffe://example.org/registry-proxy-dns", "unix:path:/usr/bin/registry-proxy-dns"),
 		spire.WithEntry(fmt.Sprintf("spiffe://example.org/%s", filepath.Base(executable)),
 			fmt.Sprintf("unix:path:%s", executable),
 		),
